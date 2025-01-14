@@ -1,43 +1,53 @@
+"use client";
+
 import React, { useState } from "react";
 import { WorkHours } from "../types/attendance";
 
 interface Props {
-    initialData: WorkHours;
-    onUpdate: (updatedData: WorkHours) => void;
+    initialData?: WorkHours;
 }
 
-const AttendanceTable: React.FC<Props> = ({ initialData, onUpdate }) => {
-    const [data, setData] = useState(initialData);
+const AttendanceTable: React.FC<Props> = ({ initialData = {} }) => {
+    const [workHours, setWorkHours] = useState<WorkHours>(initialData);
 
-    const handleChange = (date: string, value: string) => {
-        const hours = parseInt(value) || 0;
-        setData((prev) => ({ ...prev, [date]: hours }));
+    const handleChange = (date: string, hours: number) => {
+        setWorkHours({
+            ...workHours,
+            [date]: hours,
+        });
     };
 
     return (
-        <table className="table-auto w-full border-collapse border border-gray-300">
-            <thead>
-                <tr>
-                    <th className="border border-gray-300 px-4 py-2">Date</th>
-                    <th className="border border-gray-300 px-4 py-2">Hours</th>
-                </tr>
-            </thead>
-            <tbody>
-                {Object.entries(data).map(([date, hours]) => (
-                    <tr key={date}>
-                        <td className="border border-gray-300 px-4 py-2">{date}</td>
-                        <td className="border border-gray-300 px-4 py-2">
-                            <input
-                                type="number"
-                                value={hours}
-                                onChange={(e) => handleChange(date, e.target.value)}
-                                className="w-full text-center"
-                            />
-                        </td>
+        <div>
+            <h2>Tabela za miesiąc: grudzień 2024 r. pracownik: imię i nazwisko</h2>
+            <table style={{ width: "100%", textAlign: "left", border: "1px solid black", borderCollapse: "collapse" }} cellPadding="4">
+            {/* <table border={1} cellPadding="10" style={{ width: "100%", textAlign: "left" }}> */}
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Godziny pracy</th>
                     </tr>
-                ))}
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    {Object.entries(workHours).map(([date, hours]) => (
+                        <tr key={date}>
+                            <td>{date}</td>
+                            <td>
+                                <input
+                                    type="number"
+                                    value={hours}
+                                    onChange={(e) =>
+                                        handleChange(date, parseInt(e.target.value, 10) || 0)
+                                    }
+                                    style={{ width: "60px" }}
+                                />
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
     );
 };
+
 export default AttendanceTable;
