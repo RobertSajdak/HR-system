@@ -10,20 +10,49 @@ interface Props {
 const AttendanceTable: React.FC<Props> = ({ initialData = {} }) => {
     const [workHours, setWorkHours] = useState<WorkHours>(initialData);
     const [error, setError] = useState<string | null>(null);
+    const [originalData] = useState<WorkHours>(initialData); // Przechowujemy oryginalne dane
 
     const handleChange = (date: string, hours: number) => {
-        // Walidacja: godziny muszą być w zakresie 0–24
+        // Walidacja godzin
         if (hours < 0 || hours > 24) {
             setError(`Hours for ${date} must be between 0 and 24.`);
             return;
         }
-        setError(null); // Reset błędu, jeśli wartość jest poprawna
+        setError(null);
         setWorkHours({
             ...workHours,
             [date]: hours,
         });
     };
 
+    // Funkcja do zapisu danych
+    const handleSave = async () => {
+        // Symulacja zapisu do lokalnego API
+        try {
+            const response = await fetch("/api/attendance", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ workHours }),
+            });
+            if (response.ok) {
+                alert("Dane zostały zapisane!");
+            } else {
+                alert("Błąd podczas zapisu danych.");
+            }
+        } catch (error) {
+            alert("Wystąpił błąd: " + error);
+        }
+    };
+
+    // Funkcja do resetowania danych
+    const handleReset = () => {
+        setWorkHours(originalData);
+        setError(null); // Resetowanie ewentualnych błędów
+    };
+
+    // Obliczanie sumy godzin
     const totalHours = Object.values(workHours).reduce((sum, hours) => sum + hours, 0);
 
     return (
@@ -48,7 +77,7 @@ const AttendanceTable: React.FC<Props> = ({ initialData = {} }) => {
                                     onChange={(e) =>
                                         handleChange(
                                             date,
-                                            parseInt(e.target.value, 10) || 0 // Domyślnie ustaw na 0, jeśli puste
+                                            parseInt(e.target.value, 10) || 0
                                         )
                                     }
                                     style={{ width: "60px" }}
@@ -66,6 +95,12 @@ const AttendanceTable: React.FC<Props> = ({ initialData = {} }) => {
                     </tr>
                 </tfoot>
             </table>
+            <div style={{ marginTop: "20px" }}>
+                <button onClick={handleSave} style={{ marginRight: "10px" }}>
+                    Zapisz
+                </button>
+                <button onClick={handleReset}>Odśwież</button>
+            </div>
         </div>
     );
 };
