@@ -1,148 +1,79 @@
 'use client';
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 interface AttendanceData {
-  workHours: { [date: string]: number };
+  [date: string]: number;
 }
 
-const AttendanceTable: React.FC = () => {
-  const [attendanceData, setAttendanceData] = useState<AttendanceData | null>(null);
-  const [editableData, setEditableData] = useState<AttendanceData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isEdited, setIsEdited] = useState(false);
+interface Props {
+  initialData: AttendanceData;
+}
 
-  // Fetch data from the sampleData endpoint
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch("/api/sampleData");
-        if (!response.ok) {
-          throw new Error("Failed to fetch data");
-        }
-        const data = await response.json();
-        setAttendanceData(data);
-        setEditableData(data); // Initially, editable data is the same as fetched data
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+const AttendanceTable = ({ initialData }: Props) => {
+  const [editableData, setEditableData] = useState<AttendanceData>(initialData);
 
-    fetchData();
-  }, []);
-
-  // Handle changes in the hours input field
+  // Funkcja do obsługi zmiany godzin
   const handleChange = (date: string, value: string) => {
-    if (editableData) {
-      const parsedValue = parseFloat(value);
-      if (parsedValue >= 0 && parsedValue <= 24) {
-        const updatedData = {
-          ...editableData,
-          workHours: {
-            ...editableData.workHours,
-            [date]: parsedValue,
-          },
-        };
-        setEditableData(updatedData);
-        setIsEdited(true);
-      }
-    }
+    const hours = Math.max(0, Math.min(24, Number(value))); // Walidacja wartości godzin
+    setEditableData((prevData) => ({
+      ...prevData,
+      [date]: hours,
+    }));
   };
 
-  // Save changes to the API
-  const handleSave = async () => {
-    if (editableData) {
-      try {
-        const response = await fetch("/api/attendance", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(editableData),
-        });
-
-        if (response.ok) {
-          console.log("Data saved successfully");
-          setIsEdited(false); // Reset edited state after saving
-        } else {
-          throw new Error("Failed to save data");
-        }
-      } catch (error) {
-        console.error("Error saving data:", error);
-      }
-    }
+  // Funkcja do dodawania nowych wierszy (dni)
+  const addRow = () => {
+    const lastDate = Object.keys(editableData).sort().pop(); // Pobierz ostatnią datę
+    const newDate = lastDate ? new Date(lastDate) : new Date("2024-12-04"); // Jeśli brak daty, zaczynaj od 2024-12-04
+    newDate.setDate(newDate.getDate() + 1); // Dodajemy jeden dzień do ostatniej daty
+    const newDateString = newDate.toISOString().split('T')[0]; // Format: "YYYY-MM-DD"
+    
+    setEditableData((prevData) => ({
+      ...prevData,
+      [newDateString]: 0, // Domyślnie 0 godzin
+    }));
   };
 
-  // Reset changes
-  const handleReset = () => {
-    if (attendanceData) {
-      setEditableData(attendanceData); // Reset editable data to the original
-      setIsEdited(false);
-    }
-  };
-
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
-
-  if (!attendanceData) {
-    return <div>Error: No data found</div>;
-  }
-
-  // Calculate total hours worked for the month
-  const totalHours = Object.values(editableData?.workHours ?? {}).reduce(
-    (acc, hours) => acc + hours,
-    0
-  );
+  // Funkcja do obliczania sumy godzin
+  const totalHours = Object.values(editableData).reduce((acc, hours) => acc + hours, 0);
 
   return (
     <div>
-      <table border={1} className="table-auto w-full">
+      <h2>Obecność Pracownika</h2>
+      <table border={1}>
         <thead>
           <tr>
-            <th>Date</th>
-            <th>Work Hours</th>
+            <th>Data</th>
+            <th>Przepracowane godziny</th>
           </tr>
         </thead>
         <tbody>
-          {Object.keys(editableData?.workHours ?? {}).map((date) => (
+          {Object.entries(editableData).map(([date, hours]) => (
             <tr key={date}>
               <td>{date}</td>
               <td>
                 <input
                   type="number"
-                  value={editableData?.workHours[date] ?? ""}
+                  value={hours}
                   onChange={(e) => handleChange(date, e.target.value)}
                   min="0"
                   max="24"
-                  className="border px-2 py-1"
                 />
               </td>
             </tr>
           ))}
           <tr>
-            <td><strong>Total Hours</strong></td>
-            <td>{totalHours}</td>
+            <td><strong>Suma godzin</strong></td>
+            <td><strong>{totalHours}</strong></td>
           </tr>
         </tbody>
       </table>
-      <div className="mt-4">
-        <button
-          onClick={handleSave}
-          disabled={!isEdited}
-          className="bg-blue-500 text-white px-4 py-2 mr-2"
-        >
-          Save
-        </button>
-        <button
-          onClick={handleReset}
-          className="bg-gray-500 text-white px-4 py-2"
-        >
-          Reset
-        </button>
-      </div>
+
+      {/* Przycisk do dodania nowego wiersza */}
+      {Object.keys(editableData).length < 31 && (
+        <button onClick={addRow}>Dodaj nowy wiersz</button>
+      )}
     </div>
   );
 };
