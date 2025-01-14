@@ -11,9 +11,9 @@ interface Props {
 }
 
 const AttendanceTable = ({ initialData }: Props) => {
-  const [editableData, setEditableData] = useState<AttendanceData>(initialData);
+  const [editableData, setEditableData] = useState<AttendanceData>({ ...initialData });
+  const [savedData, setSavedData] = useState<AttendanceData>({ ...initialData });
 
-  // Funkcja do obsługi zmiany godzin
   const handleChange = (date: string, value: string) => {
     const hours = Math.max(0, Math.min(24, Number(value))); // Walidacja wartości godzin
     setEditableData((prevData) => ({
@@ -22,20 +22,29 @@ const AttendanceTable = ({ initialData }: Props) => {
     }));
   };
 
-  // Funkcja do dodawania nowych wierszy (dni)
   const addRow = () => {
-    const lastDate = Object.keys(editableData).sort().pop(); // Pobierz ostatnią datę
-    const newDate = lastDate ? new Date(lastDate) : new Date("2024-12-04"); // Jeśli brak daty, zaczynaj od 2024-12-04
-    newDate.setDate(newDate.getDate() + 1); // Dodajemy jeden dzień do ostatniej daty
-    const newDateString = newDate.toISOString().split('T')[0]; // Format: "YYYY-MM-DD"
-    
+    const lastDate = Object.keys(editableData).sort().pop();
+    const newDate = lastDate ? new Date(lastDate) : new Date("2024-12-04");
+    newDate.setDate(newDate.getDate() + 1);
+    const newDateString = newDate.toISOString().split('T')[0];
+
     setEditableData((prevData) => ({
       ...prevData,
-      [newDateString]: 0, // Domyślnie 0 godzin
+      [newDateString]: 0,
     }));
   };
 
-  // Funkcja do obliczania sumy godzin
+  const handleSave = () => {
+    setSavedData({ ...editableData });
+    alert("Zmiany zapisane.");
+  };
+
+  const handleReset = () => {
+    // Przywrócenie danych zapisanych bez chwilowego usuwania wierszy
+    setEditableData(() => ({ ...savedData }));
+    alert("Przywrócono zapisane dane.");
+  };
+
   const totalHours = Object.values(editableData).reduce((acc, hours) => acc + hours, 0);
 
   return (
@@ -70,10 +79,18 @@ const AttendanceTable = ({ initialData }: Props) => {
         </tbody>
       </table>
 
-      {/* Przycisk do dodania nowego wiersza */}
       {Object.keys(editableData).length < 31 && (
         <button onClick={addRow}>Dodaj nowy wiersz</button>
       )}
+
+      <div style={{ marginTop: "20px" }}>
+        <button onClick={handleSave} style={{ marginRight: "10px" }}>
+          Zapisz
+        </button>
+        <button onClick={handleReset}>
+          Odśwież
+        </button>
+      </div>
     </div>
   );
 };
