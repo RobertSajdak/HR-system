@@ -2,8 +2,8 @@ import AttendanceTable from "@/components/AttendanceTable";
 
 const Home = () => {
     const testData = {
-        "2024-12-01": 8,
-        "2024-12-02": 6,
+        "2024-12-01": 0,
+        "2024-12-02": 0,
         "2024-12-03": 0,
         "2024-12-04": 0,
         "2024-12-05": 0,

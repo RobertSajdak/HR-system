@@ -1,108 +1,150 @@
-"use client";
+'use client';
 
-import React, { useState } from "react";
-import { WorkHours } from "../types/attendance";
+import { useEffect, useState } from "react";
 
-interface Props {
-    initialData?: WorkHours;
+interface AttendanceData {
+  workHours: { [date: string]: number };
 }
 
-const AttendanceTable: React.FC<Props> = ({ initialData = {} }) => {
-    const [workHours, setWorkHours] = useState<WorkHours>(initialData);
-    const [error, setError] = useState<string | null>(null);
-    const [originalData] = useState<WorkHours>(initialData); // Przechowujemy oryginalne dane
+const AttendanceTable: React.FC = () => {
+  const [attendanceData, setAttendanceData] = useState<AttendanceData | null>(null);
+  const [editableData, setEditableData] = useState<AttendanceData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isEdited, setIsEdited] = useState(false);
 
-    const handleChange = (date: string, hours: number) => {
-        // Walidacja godzin
-        if (hours < 0 || hours > 24) {
-            setError(`Hours for ${date} must be between 0 and 24.`);
-            return;
+  // Fetch data from the sampleData endpoint
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await fetch("/api/sampleData");
+        if (!response.ok) {
+          throw new Error("Failed to fetch data");
         }
-        setError(null);
-        setWorkHours({
-            ...workHours,
-            [date]: hours,
+        const data = await response.json();
+        setAttendanceData(data);
+        setEditableData(data); // Initially, editable data is the same as fetched data
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  // Handle changes in the hours input field
+  const handleChange = (date: string, value: string) => {
+    if (editableData) {
+      const parsedValue = parseFloat(value);
+      if (parsedValue >= 0 && parsedValue <= 24) {
+        const updatedData = {
+          ...editableData,
+          workHours: {
+            ...editableData.workHours,
+            [date]: parsedValue,
+          },
+        };
+        setEditableData(updatedData);
+        setIsEdited(true);
+      }
+    }
+  };
+
+  // Save changes to the API
+  const handleSave = async () => {
+    if (editableData) {
+      try {
+        const response = await fetch("/api/attendance", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(editableData),
         });
-    };
 
-    // Funkcja do zapisu danych
-    const handleSave = async () => {
-        // Symulacja zapisu do lokalnego API
-        try {
-            const response = await fetch("/api/attendance", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ workHours }),
-            });
-            if (response.ok) {
-                alert("Dane zostały zapisane!");
-            } else {
-                alert("Błąd podczas zapisu danych.");
-            }
-        } catch (error) {
-            alert("Wystąpił błąd: " + error);
+        if (response.ok) {
+          console.log("Data saved successfully");
+          setIsEdited(false); // Reset edited state after saving
+        } else {
+          throw new Error("Failed to save data");
         }
-    };
+      } catch (error) {
+        console.error("Error saving data:", error);
+      }
+    }
+  };
 
-    // Funkcja do resetowania danych
-    const handleReset = () => {
-        setWorkHours(originalData);
-        setError(null); // Resetowanie ewentualnych błędów
-    };
+  // Reset changes
+  const handleReset = () => {
+    if (attendanceData) {
+      setEditableData(attendanceData); // Reset editable data to the original
+      setIsEdited(false);
+    }
+  };
 
-    // Obliczanie sumy godzin
-    const totalHours = Object.values(workHours).reduce((sum, hours) => sum + hours, 0);
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
 
-    return (
-        <div>
-            <h2>Attendance Table</h2>
-            {error && <div style={{ color: "red", marginBottom: "10px" }}>{error}</div>}
-            <table border={1} cellPadding={10} style={{ width: "100%", textAlign: "left" }}>
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Hours Worked</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {Object.entries(workHours).map(([date, hours]) => (
-                        <tr key={date}>
-                            <td>{date}</td>
-                            <td>
-                                <input
-                                    type="number"
-                                    value={hours}
-                                    onChange={(e) =>
-                                        handleChange(
-                                            date,
-                                            parseInt(e.target.value, 10) || 0
-                                        )
-                                    }
-                                    style={{ width: "60px" }}
-                                    min={0}
-                                    max={24}
-                                />
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-                <tfoot>
-                    <tr>
-                        <td><strong>Total</strong></td>
-                        <td><strong>{totalHours}</strong></td>
-                    </tr>
-                </tfoot>
-            </table>
-            <div style={{ marginTop: "20px" }}>
-                <button onClick={handleSave} style={{ marginRight: "10px" }}>
-                    Zapisz
-                </button>
-                <button onClick={handleReset}>Odśwież</button>
-            </div>
-        </div>
-    );
+  if (!attendanceData) {
+    return <div>Error: No data found</div>;
+  }
+
+  // Calculate total hours worked for the month
+  const totalHours = Object.values(editableData?.workHours ?? {}).reduce(
+    (acc, hours) => acc + hours,
+    0
+  );
+
+  return (
+    <div>
+      <table border={1} className="table-auto w-full">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Work Hours</th>
+          </tr>
+        </thead>
+        <tbody>
+          {Object.keys(editableData?.workHours ?? {}).map((date) => (
+            <tr key={date}>
+              <td>{date}</td>
+              <td>
+                <input
+                  type="number"
+                  value={editableData?.workHours[date] ?? ""}
+                  onChange={(e) => handleChange(date, e.target.value)}
+                  min="0"
+                  max="24"
+                  className="border px-2 py-1"
+                />
+              </td>
+            </tr>
+          ))}
+          <tr>
+            <td><strong>Total Hours</strong></td>
+            <td>{totalHours}</td>
+          </tr>
+        </tbody>
+      </table>
+      <div className="mt-4">
+        <button
+          onClick={handleSave}
+          disabled={!isEdited}
+          className="bg-blue-500 text-white px-4 py-2 mr-2"
+        >
+          Save
+        </button>
+        <button
+          onClick={handleReset}
+          className="bg-gray-500 text-white px-4 py-2"
+        >
+          Reset
+        </button>
+      </div>
+    </div>
+  );
 };
 
 export default AttendanceTable;
