@@ -1,30 +1,37 @@
-'use client';
+"use client";
 
 import { useEffect, useState } from "react";
-import AttendanceTable from '../components/AttendanceTable';
+import AttendanceTable from "../components/AttendanceTable";
 
-const Page = () => {
-  const [data, setData] = useState<{ workHours: { [key: string]: number } } | null>(null);
+interface AttendanceData {
+  workHours: Record<string, number>;
+}
 
-  // Pobranie danych z API przy starcie
+const Page: React.FC = () => {
+  const [data, setData] = useState<AttendanceData | null>(null);
+
   useEffect(() => {
     const fetchData = async () => {
-      const response = await fetch('/api/sampleData');
-      const data = await response.json();
-      setData(data);
+      try {
+        const res = await fetch("/api/sampleData");
+        const fetchedData: AttendanceData = await res.json();
+        setData(fetchedData);
+      } catch (error) {
+        console.error("Błąd ładowania danych:", error);
+      }
     };
 
     fetchData();
   }, []);
 
-  // Jeżeli dane nie zostały jeszcze załadowane
-  if (!data) return <div>Loading...</div>;
+  if (!data) {
+    return <div>Loading...</div>;
+  }
 
   return (
-    <div>
-      <h1>System Obecności Pracownika</h1>
-      {/* Przekazujemy dane do komponentu AttendanceTable */}
-      <AttendanceTable initialData={data.workHours} />
+    <div className="p-4">
+      {/* Przekazujemy dane do AttendanceTable */}
+      <AttendanceTable initialData={data} />
     </div>
   );
 };

@@ -1,4 +1,5 @@
 "use client";
+
 import React, { useState, useEffect } from 'react';
 import EmployeeNameInput from '../components/EmployeeNameInput';
 import AttendanceRow from '../components/AttendanceRow';
@@ -13,15 +14,16 @@ interface PageProps {
 }
 
 // Główny komponent aplikacji odpowiadający za tabelę danych.
-const AttendanceTable: React.FC<PageProps> = () => {
-  const [editableData, setEditableData] = useState<AttendanceData | null>(null);
-  const [employeeName, setEmployeeName] = useState<string>("");
-  const [savedData, setSavedData] = useState<AttendanceData | null>(null);
-  const [loading, setLoading] = useState<boolean>(true); // Domyślnie ustawiamy jako loading
+const AttendanceTable: React.FC<PageProps> = ({ initialData }) => {
+  const [editableData, setEditableData] = useState<AttendanceData>(initialData);
+  const [employeeName, setEmployeeName] = useState<string>('');
+  const [savedData, setSavedData] = useState<AttendanceData>(initialData);
+  const [loading, setLoading] = useState<boolean>(false); // Inicjalizujemy jako false
 
   // Fetch danych z API w useEffect
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true);
       try {
         const res = await fetch('/api/sampleData');
         const data: AttendanceData = await res.json();
@@ -30,29 +32,27 @@ const AttendanceTable: React.FC<PageProps> = () => {
       } catch (error) {
         console.error('Błąd ładowania danych:', error);
       } finally {
-        setLoading(false); // Zakończenie ładowania
+        setLoading(false);
       }
     };
 
-    fetchData();
-  }, []); // Efekt tylko raz, przy pierwszym załadowaniu
+    if (!initialData) fetchData(); // Pobierz dane tylko jeśli nie zostały przekazane
+  }, [initialData]);
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setEmployeeName(e.target.value);
   };
 
   const handleHoursChange = (date: string, value: string) => {
-    if (editableData) {
-      const hours = parseInt(value, 10);
-      if (!isNaN(hours) && hours >= 0 && hours <= 24) {
-        setEditableData({
-          ...editableData,
-          workHours: {
-            ...editableData.workHours,
-            [date]: hours,
-          },
-        });
-      }
+    const hours = parseInt(value, 10);
+    if (!isNaN(hours) && hours >= 0 && hours <= 24 && editableData) {
+      setEditableData({
+        ...editableData,
+        workHours: {
+          ...editableData.workHours,
+          [date]: hours,
+        },
+      });
     }
   };
 
@@ -64,10 +64,8 @@ const AttendanceTable: React.FC<PageProps> = () => {
   };
 
   const handleReset = () => {
-    if (savedData) {
-      setEditableData(savedData);
-      alert('Przywrócono zapisane dane.');
-    }
+    setEditableData(savedData);
+    alert('Przywrócono zapisane dane.');
   };
 
   if (loading) {
