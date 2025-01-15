@@ -1,5 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Style ogólne */
 body {
-    font-family: Arial, sans-serif;
+    @apply bg-gray-100 font-sans text-gray-900;
+  }
+  
+  /* Tło i marginesy dla całej aplikacji */
+  * {
+    @apply box-border;
     margin: 0;
     padding: 0;
+  }
+  
+  h2 {
+    @apply font-semibold text-2xl text-gray-800;
+  }
+  
+  button {
+    @apply transition-all ease-in-out duration-300;
+  }
+  
+  /* Stylizacja tabeli */
+  table {
+    @apply table-auto w-full border-collapse border border-gray-300;
+  }
+  
+  th,
+  td {
+    @apply border border-gray-300 p-2 text-center;
+  }
+  
+  /* Stylizacja wiersza podsumowującego */
+  tfoot {
+    @apply bg-gray-100 font-bold;
+  }
+  
+  /* Stylowanie formularza */
+  input[type="text"] {
+    @apply border border-gray-300 p-2 rounded-md w-full;
+  }
+  
+  input[type="number"] {
+    @apply border border-gray-300 p-1 rounded-md w-full;
+  }
+  
+@media (max-width: 640px) {
+  .table {
+    overflow-x: auto;
+    display: block;
+  }
+  th, td {
+    padding: 1rem;
+  }
 }

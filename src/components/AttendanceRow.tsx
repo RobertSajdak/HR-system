@@ -1,5 +1,6 @@
-// Komponent odpowiedzialny za pojedynczy wiersz tabeli z godzinami pracy.
+import React from "react";
 
+// Komponent odpowiedzialny za pojedynczy wiersz tabeli z godzinami pracy.
 interface AttendanceRowProps {
     date: string;
     hours: number;
@@ -8,16 +9,16 @@ interface AttendanceRowProps {
   
   const AttendanceRow: React.FC<AttendanceRowProps> = ({ date, hours, onHoursChange }) => {
     return (
-      <tr key={date}>
-        <td className="border border-gray-300 p-2">{date}</td>
-        <td className="border border-gray-300 p-2">
+      <tr>
+        <td className="border border-gray-300 p-2 text-left">{date}</td>
+        <td className="border border-gray-300 p-2 text-left">
           <input
             type="number"
             value={hours}
             onChange={(e) => onHoursChange(date, e.target.value)}
             min="0"
             max="24"
-            className="w-full border border-gray-300 rounded p-1"
+            className="w-full border border-gray-300 rounded-md p-2"
           />
         </td>
       </tr>
