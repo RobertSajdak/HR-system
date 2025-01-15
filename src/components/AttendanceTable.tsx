@@ -1,26 +1,41 @@
 "use client";
-
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
+import EmployeeNameInput from '../components/EmployeeNameInput';
+import AttendanceRow from '../components/AttendanceRow';
+import TotalHoursRow from '../components/TotalHoursRow';
 
 interface AttendanceData {
   workHours: Record<string, number>;
 }
 
-const AttendanceTable: React.FC = () => {
+interface PageProps {
+  initialData: AttendanceData;
+}
+
+// Główny komponent aplikacji odpowiadający za tabelę danych.
+const AttendanceTable: React.FC<PageProps> = () => {
   const [editableData, setEditableData] = useState<AttendanceData | null>(null);
   const [employeeName, setEmployeeName] = useState<string>("");
   const [savedData, setSavedData] = useState<AttendanceData | null>(null);
+  const [loading, setLoading] = useState<boolean>(true); // Domyślnie ustawiamy jako loading
 
+  // Fetch danych z API w useEffect
   useEffect(() => {
-    // Pobieranie danych z API
-    fetch("/api/sampleData")
-      .then((res) => res.json())
-      .then((data: AttendanceData) => {
+    const fetchData = async () => {
+      try {
+        const res = await fetch('/api/sampleData');
+        const data: AttendanceData = await res.json();
         setEditableData(data);
-        setSavedData(data);  // Przechowywanie danych początkowych w savedData
-      })
-      .catch((error) => console.error("Error loading data:", error));
-  }, []);
+        setSavedData(data);
+      } catch (error) {
+        console.error('Błąd ładowania danych:', error);
+      } finally {
+        setLoading(false); // Zakończenie ładowania
+      }
+    };
+
+    fetchData();
+  }, []); // Efekt tylko raz, przy pierwszym załadowaniu
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setEmployeeName(e.target.value);
@@ -43,23 +58,26 @@ const AttendanceTable: React.FC = () => {
 
   const handleSave = () => {
     if (editableData) {
-      setSavedData(editableData); // Zapisujemy zmodyfikowane dane
-      alert("Dane zostały zapisane.");
+      setSavedData(editableData);
+      alert('Dane zostały zapisane.');
     }
   };
 
   const handleReset = () => {
     if (savedData) {
-      setEditableData(savedData);  // Przywracamy zapisane dane
-      alert("Przywrócono zapisane dane.");
+      setEditableData(savedData);
+      alert('Przywrócono zapisane dane.');
     }
   };
 
-  if (!editableData) {
+  if (loading) {
     return <div>Loading...</div>;
   }
 
-  // Oblicz całkowitą liczbę godzin
+  if (!editableData || !editableData.workHours) {
+    return <div>Brak danych do wyświetlenia.</div>;
+  }
+
   const totalHours = Object.values(editableData.workHours).reduce(
     (acc, hours) => acc + hours,
     0
@@ -67,29 +85,14 @@ const AttendanceTable: React.FC = () => {
 
   return (
     <div className="p-4">
-      {/* Formularz wprowadzania danych pracownika */}
-      <div className="mb-4">
-        <label htmlFor="employeeName" className="block font-medium mb-2">
-          Imię i nazwisko pracownika:
-        </label>
-        <input
-          id="employeeName"
-          type="text"
-          value={employeeName}
-          onChange={handleNameChange}
-          placeholder="Wpisz imię i nazwisko"
-          className="border border-gray-300 rounded p-2 w-full"
-        />
-      </div>
+      <EmployeeNameInput employeeName={employeeName} onChange={handleNameChange} />
 
-      {/* Wyświetlanie danych pracownika */}
       {employeeName && (
         <h2 className="text-lg font-semibold mb-4">
           Obecność pracownika: {employeeName}
         </h2>
       )}
 
-      {/* Tabela */}
       <table className="border-collapse border border-gray-300 w-full mb-4">
         <thead>
           <tr>
@@ -99,29 +102,17 @@ const AttendanceTable: React.FC = () => {
         </thead>
         <tbody>
           {Object.entries(editableData.workHours).map(([date, hours]) => (
-            <tr key={date}>
-              <td className="border border-gray-300 p-2">{date}</td>
-              <td className="border border-gray-300 p-2">
-                <input
-                  type="number"
-                  value={hours}
-                  onChange={(e) => handleHoursChange(date, e.target.value)}
-                  min="0"
-                  max="24"
-                  className="w-full border border-gray-300 rounded p-1"
-                />
-              </td>
-            </tr>
+            <AttendanceRow
+              key={date}
+              date={date}
+              hours={hours}
+              onHoursChange={handleHoursChange}
+            />
           ))}
-          {/* Wiersz sumujący */}
-          <tr className="bg-gray-100 font-bold">
-            <td className="border border-gray-300 p-2">Łącznie</td>
-            <td className="border border-gray-300 p-2">{totalHours}</td>
-          </tr>
+          <TotalHoursRow totalHours={totalHours} />
         </tbody>
       </table>
 
-      {/* Przyciski */}
       <div className="flex space-x-4">
         <button
           onClick={handleSave}
