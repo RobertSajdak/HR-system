@@ -25,7 +25,7 @@ const AttendanceTable: React.FC<PageProps> = ({ initialData }) => {
 		const fetchData = async () => {
 			setLoading(true);
 			try {
-				const res = await fetch('/api/sampleData');
+				const res = await fetch('/api/work-hours');
 				const data: AttendanceData = await res.json();
 				setEditableData(data);
 				setSavedData(data);
@@ -36,8 +36,8 @@ const AttendanceTable: React.FC<PageProps> = ({ initialData }) => {
 			}
 		};
 
-		if (!initialData) fetchData(); // Pobierz dane tylko jeśli nie zostały przekazane
-	}, [initialData]);
+		fetchData(); // Zawsze dane pobierane są z API
+	}, []);
 
 	const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		setEmployeeName(e.target.value);
@@ -56,10 +56,24 @@ const AttendanceTable: React.FC<PageProps> = ({ initialData }) => {
 		}
 	};
 
-	const handleSave = () => {
-		if (editableData) {
-			setSavedData(editableData);
-			alert('Dane zostały zapisane.');
+	// Funkcja handleSave() wysyła dane do API
+	const handleSave = async () => {
+		try {
+			const response = await fetch('/api/work-hours', {
+				method: 'PUT', // Użycie PUT do aktualizacji
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(editableData),
+			});
+
+			if (response.ok) {
+				const updatedData = await response.json();
+				setSavedData(updatedData);
+				alert('Dane zostały zapisane.');
+			} else {
+				console.error('Błąd zapisu danych:', response.statusText);
+			}
+		} catch (error) {
+			console.error('Błąd zapisu:', error);
 		}
 	};
 
