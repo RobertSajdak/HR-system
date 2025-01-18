@@ -4,35 +4,47 @@ import React from 'react';
 interface AttendanceRowProps {
 	date: string;
 	hours: number;
+	contain: string;
 	onHoursChange: (date: string, value: string) => void;
+	onContainChange: (date: string, value: string) => void;
 	onDeleteRow: (date: string) => void; // Funkcja usuwania przekazana z komponentu nadrzędnego
 }
 
 const AttendanceRow: React.FC<AttendanceRowProps> = ({
 	date,
 	hours,
+	contain,
 	onHoursChange,
+	onContainChange,
 	onDeleteRow,
 }) => {
 	return (
 		<tr>
-			<td className="border border-gray-300 p-2 text-left">{date}</td>
-			<td className="border border-gray-300 p-2 text-left">
+			<td className="w-1/5 p-2 text-left">{date}</td>
+			<td className="w-1/5 p-2 items-center">
 				<input
 					type="number"
 					value={hours}
 					onChange={e => onHoursChange(date, e.target.value)}
 					min="0"
 					max="24"
-					className="w-full border border-gray-300 rounded-md p-2"
+					className="w-8 rounded-md p-2 text-left"
 				/>
 			</td>
-			<td className="border border-gray-300 p-2 text-left">
+			<td className="flex space-x-5">
+				<input
+					type="text"
+					value={contain}
+					onChange={e => onContainChange(date, e.target.value)}
+					min="0"
+					max="20"
+					className="w-auto h-8 rounded-md p-2 text-left"
+				/>
 				<button
 					onClick={() => onDeleteRow(date)} // Wywołanie funkcji usuwania
-					className="bg-red-500 text-white p-2 rounded-md hover:bg-red-600 transition-all"
+					className="w-40 h-8 justify-items-end bg-red-400 text-white px-2 rounded-2xl hover:bg-red-600 transition-all"
 				>
-					Usuń
+					Usuń wiersz
 				</button>
 			</td>
 		</tr>

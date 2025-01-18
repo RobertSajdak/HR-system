@@ -24,7 +24,7 @@ body {
   
   /* Stylizacja tabeli */
   table {
-    @apply table-auto w-full border-collapse border border-gray-300;
+    @apply table-auto w-full border-collapse border-gray-300;
   }
   
   th,

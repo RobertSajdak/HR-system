@@ -13,6 +13,7 @@ const TotalHoursRow: React.FC<TotalHoursRowProps> = ({ totalHours }) => {
 		<tr className="bg-gray-200 font-bold">
 			<td className="border border-gray-300 p-2 text-left">Łącznie</td>
 			<td className="border border-gray-300 p-2 pl-4 text-left">{displayTotalHours}</td>
+			<td className="border border-gray-300 p-2 text-left"></td>
 		</tr>
 	);
 };
