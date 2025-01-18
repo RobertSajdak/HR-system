@@ -18,14 +18,17 @@ const AttendanceTable: React.FC<PageProps> = ({ initialData }) => {
 	const [editableData, setEditableData] = useState<AttendanceData>(initialData);
 	const [employeeName, setEmployeeName] = useState<string>('');
 	const [savedData, setSavedData] = useState<AttendanceData>(initialData);
-	const [loading, setLoading] = useState<boolean>(false); // Inicjalizujemy jako false
+	const [loading, setLoading] = useState<boolean>(false); // Inicjalizacja stanu "false"
 
-	// Fetch danych z API w useEffect
+	// Pobiera dane z API przy inicjalizacji plikacji.
 	useEffect(() => {
 		const fetchData = async () => {
 			setLoading(true);
 			try {
-				const res = await fetch('/api/work-hours');
+				const res = await fetch('/api/work-hours'); // Upewnia się, że API działa poprawnie
+				if (!res.ok) {
+					throw new Error(`Błąd HTTP: ${res.status}`);
+				}
 				const data: AttendanceData = await res.json();
 				setEditableData(data);
 				setSavedData(data);
@@ -36,50 +39,124 @@ const AttendanceTable: React.FC<PageProps> = ({ initialData }) => {
 			}
 		};
 
-		fetchData(); // Zawsze dane pobierane są z API
-	}, []);
+		if (!initialData || !initialData.workHours) {
+			fetchData(); // Pobiera dane tylko, jeśli initialData jest puste
+		}
+	}, [initialData]);
 
 	const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		setEmployeeName(e.target.value);
 	};
 
-	const handleHoursChange = (date: string, value: string) => {
+	// Aktualizacja danych w API
+	const handleHoursChange = async (date: string, value: string) => {
 		const hours = parseInt(value, 10);
-		if (!isNaN(hours) && hours >= 0 && hours <= 24 && editableData) {
-			setEditableData({
+		if (!isNaN(hours) && hours >= 0 && hours <= 24) {
+			const updatedData = {
 				...editableData,
 				workHours: {
 					...editableData.workHours,
 					[date]: hours,
 				},
-			});
+			};
+
+			setEditableData(updatedData);
+
+			try {
+				await fetch('/api/work-hours', {
+					method: 'PUT',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ date, hours }),
+				});
+			} catch (error) {
+				console.error('Błąd aktualizacji danych:', error);
+			}
 		}
 	};
 
-	// Funkcja handleSave() wysyła dane do API
+	// Zapis / wysyłka danych do API
 	const handleSave = async () => {
+		if (editableData) {
+			try {
+				const response = await fetch('/api/work-hours', {
+					method: 'PUT',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify(editableData),
+				});
+
+				if (response.ok) {
+					setSavedData(editableData); // Aktualizacja zapisanych danych
+					alert('Dane zostały zapisane!');
+				} else {
+					alert('Błąd podczas zapisywania danych.');
+				}
+			} catch (error) {
+				console.error('Błąd zapisu danych:', error);
+				alert('Błąd podczas zapisywania danych.');
+			}
+		}
+	};
+
+	// Odświeżanie / reset danych
+	const handleReset = () => {
+		if (savedData && savedData.workHours) {
+			setEditableData(savedData); // Przywraca zapisane dane
+			alert('Zapisane dane zostały przywrócone!');
+		} else {
+			alert('Brak zapisanych danych do przywrócenia.');
+		}
+	};
+
+	// Dodawanie nowego wiersza
+	const handleAddRow = async () => {
 		try {
+			const newEntry = {
+				date: new Date().toISOString().split('T')[0], // Aktualna data
+				hours: 0,
+			};
+
 			const response = await fetch('/api/work-hours', {
-				method: 'PUT', // Użycie PUT do aktualizacji
+				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(editableData),
+				body: JSON.stringify(newEntry),
 			});
 
 			if (response.ok) {
-				const updatedData = await response.json();
-				setSavedData(updatedData);
-				alert('Dane zostały zapisane.');
+				const addedEntry = await response.json();
+				setEditableData({
+					...editableData,
+					workHours: {
+						...editableData.workHours,
+						[addedEntry.date]: addedEntry.hours,
+					},
+				});
 			} else {
-				console.error('Błąd zapisu danych:', response.statusText);
+				console.error('Błąd dodawania wiersza:', response.statusText);
 			}
 		} catch (error) {
-			console.error('Błąd zapisu:', error);
+			console.error('Błąd dodawania:', error);
 		}
 	};
 
-	const handleReset = () => {
-		setEditableData(savedData);
-		alert('Przywrócono zapisane dane.');
+	// Usuwanie pojedynczego wiersza
+	const handleDeleteRow = async (date: string) => {
+		try {
+			const response = await fetch('/api/work-hours', {
+				method: 'DELETE',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ date }),
+			});
+
+			if (response.ok) {
+				const filteredData = { ...editableData };
+				delete filteredData.workHours[date];
+				setEditableData(filteredData);
+			} else {
+				console.error('Błąd usuwania wiersza:', response.statusText);
+			}
+		} catch (error) {
+			console.error('Błąd usuwania:', error);
+		}
 	};
 
 	if (loading) {
@@ -110,14 +187,24 @@ const AttendanceTable: React.FC<PageProps> = ({ initialData }) => {
 					</tr>
 				</thead>
 				<tbody>
-					{Object.entries(editableData.workHours).map(([date, hours]) => (
-						<AttendanceRow
-							key={date}
-							date={date}
-							hours={hours}
-							onHoursChange={handleHoursChange}
-						/>
-					))}
+					{Object.entries(editableData.workHours || {}).length > 0 ? (
+						Object.entries(editableData.workHours).map(([date, hours]) => (
+							<AttendanceRow
+								key={date}
+								date={date}
+								hours={hours}
+								onHoursChange={handleHoursChange}
+								onDeleteRow={handleDeleteRow}
+							/>
+						))
+					) : (
+						<tr>
+							<td colSpan={3} className="text-center p-4">
+								Brak danych do wyświetlenia.
+							</td>
+						</tr>
+					)}
+
 					<TotalHoursRow totalHours={totalHours} />
 				</tbody>
 			</table>
@@ -136,6 +223,12 @@ const AttendanceTable: React.FC<PageProps> = ({ initialData }) => {
 					Odśwież
 				</button>
 			</div>
+			<button
+				onClick={handleAddRow}
+				className="bg-green-600 text-white p-3 rounded-md hover:bg-green-700 transition-all ease-in-out"
+			>
+				Dodaj wiersz
+			</button>
 		</div>
 	);
 };
