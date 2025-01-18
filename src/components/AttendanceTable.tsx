@@ -13,22 +13,19 @@ interface PageProps {
 	initialData: AttendanceData;
 }
 
-// Główny komponent aplikacji odpowiadający za tabelę danych.
 const AttendanceTable: React.FC<PageProps> = ({ initialData }) => {
 	const [editableData, setEditableData] = useState<AttendanceData>(initialData);
-	const [employeeName, setEmployeeName] = useState<string>('');
 	const [savedData, setSavedData] = useState<AttendanceData>(initialData);
-	const [loading, setLoading] = useState<boolean>(false); // Inicjalizacja stanu "false"
+	const [employeeName, setEmployeeName] = useState<string>('');
+	const [loading, setLoading] = useState<boolean>(false);
 
-	// Pobiera dane z API przy inicjalizacji plikacji.
+	// Pobieranie danych inicjalizujących z API
 	useEffect(() => {
 		const fetchData = async () => {
 			setLoading(true);
 			try {
-				const res = await fetch('/api/work-hours'); // Upewnia się, że API działa poprawnie
-				if (!res.ok) {
-					throw new Error(`Błąd HTTP: ${res.status}`);
-				}
+				const res = await fetch('/api/work-hours');
+				if (!res.ok) throw new Error(`Błąd HTTP: ${res.status}`);
 				const data: AttendanceData = await res.json();
 				setEditableData(data);
 				setSavedData(data);
@@ -40,15 +37,16 @@ const AttendanceTable: React.FC<PageProps> = ({ initialData }) => {
 		};
 
 		if (!initialData || !initialData.workHours) {
-			fetchData(); // Pobiera dane tylko, jeśli initialData jest puste
+			fetchData();
 		}
 	}, [initialData]);
 
+	// Aktualizacja danych pracownika
 	const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		setEmployeeName(e.target.value);
 	};
 
-	// Aktualizacja danych w API
+	// Funkcja zmiany godzin
 	const handleHoursChange = async (date: string, value: string) => {
 		const hours = parseInt(value, 10);
 		if (!isNaN(hours) && hours >= 0 && hours <= 24) {
@@ -59,7 +57,6 @@ const AttendanceTable: React.FC<PageProps> = ({ initialData }) => {
 					[date]: hours,
 				},
 			};
-
 			setEditableData(updatedData);
 
 			try {
@@ -74,47 +71,54 @@ const AttendanceTable: React.FC<PageProps> = ({ initialData }) => {
 		}
 	};
 
-	// Zapis / wysyłka danych do API
+	// Zapis danych do API
 	const handleSave = async () => {
-		if (editableData) {
-			try {
-				const response = await fetch('/api/work-hours', {
-					method: 'PUT',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify(editableData),
-				});
+		try {
+			const response = await fetch('/api/work-hours', {
+				method: 'PUT',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(editableData),
+			});
 
-				if (response.ok) {
-					setSavedData(editableData); // Aktualizacja zapisanych danych
-					alert('Dane zostały zapisane!');
-				} else {
-					alert('Błąd podczas zapisywania danych.');
-				}
-			} catch (error) {
-				console.error('Błąd zapisu danych:', error);
+			if (response.ok) {
+				setSavedData(editableData); // Aktualizacja zapisanych danych
+				alert('Dane zostały zapisane!');
+			} else {
 				alert('Błąd podczas zapisywania danych.');
 			}
+		} catch (error) {
+			console.error('Błąd zapisu danych:', error);
+			alert('Błąd podczas zapisywania danych.');
 		}
 	};
 
-	// Odświeżanie / reset danych
-	const handleReset = () => {
-		if (savedData && savedData.workHours) {
-			setEditableData(savedData); // Przywraca zapisane dane
-			alert('Zapisane dane zostały przywrócone!');
-		} else {
-			alert('Brak zapisanych danych do przywrócenia.');
-		}
+	// Funkcja resetu (odświeżania) danych
+	const handleReset = async () => {
+		setEditableData(savedData); // Przywracanie zapisanych danych
+		alert('Zapisane dane zostały przywrócone!');
 	};
 
 	// Dodawanie nowego wiersza
 	const handleAddRow = async () => {
 		try {
+			// Pobiera ostatnią datę z tabeli
+			const dates = Object.keys(editableData.workHours);
+			const lastDate = dates.length > 0 ? new Date(dates[dates.length - 1]) : new Date();
+
+			// Dodaje jeden dzień do ostatniej daty
+			const newDate = new Date(lastDate);
+			newDate.setDate(newDate.getDate() + 1);
+
+			// Format daty do postaci YYYY-MM-DD
+			const formattedDate = newDate.toISOString().split('T')[0];
+
+			// Tworzenie nowego wiersza
 			const newEntry = {
-				date: new Date().toISOString().split('T')[0], // Aktualna data
+				date: formattedDate,
 				hours: 0,
 			};
 
+			// Wysłanie żądania do API
 			const response = await fetch('/api/work-hours', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
@@ -122,12 +126,12 @@ const AttendanceTable: React.FC<PageProps> = ({ initialData }) => {
 			});
 
 			if (response.ok) {
-				const addedEntry = await response.json();
+				// Aktualizacja stanu tabeli
 				setEditableData({
 					...editableData,
 					workHours: {
 						...editableData.workHours,
-						[addedEntry.date]: addedEntry.hours,
+						[formattedDate]: 0,
 					},
 				});
 			} else {
@@ -138,7 +142,7 @@ const AttendanceTable: React.FC<PageProps> = ({ initialData }) => {
 		}
 	};
 
-	// Usuwanie pojedynczego wiersza
+	// Usuwanie wiersza
 	const handleDeleteRow = async (date: string) => {
 		try {
 			const response = await fetch('/api/work-hours', {
@@ -148,9 +152,11 @@ const AttendanceTable: React.FC<PageProps> = ({ initialData }) => {
 			});
 
 			if (response.ok) {
-				const filteredData = { ...editableData };
-				delete filteredData.workHours[date];
-				setEditableData(filteredData);
+				setEditableData(prevState => {
+					const updatedWorkHours = { ...prevState.workHours };
+					delete updatedWorkHours[date];
+					return { ...prevState, workHours: updatedWorkHours };
+				});
 			} else {
 				console.error('Błąd usuwania wiersza:', response.statusText);
 			}
@@ -205,7 +211,7 @@ const AttendanceTable: React.FC<PageProps> = ({ initialData }) => {
 						</tr>
 					)}
 
-					<TotalHoursRow totalHours={totalHours} />
+					<TotalHoursRow totalHours={totalHours || 0} />
 				</tbody>
 			</table>
 
