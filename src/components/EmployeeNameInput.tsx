@@ -1,24 +1,23 @@
 import React from 'react';
 
 interface EmployeeNameInputProps {
-	employeeName: string;
-	onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+	value: string; // Aktualna wartość inputu
+	onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; // Funkcja obsługująca zmianę wartości
 }
 
-// Komponent odpowiedzialny za wyświetlanie inputa do wpisania imienia pracownika.
-const EmployeeNameInput: React.FC<EmployeeNameInputProps> = ({ employeeName, onChange }) => {
+const EmployeeNameInput: React.FC<EmployeeNameInputProps> = ({ value, onChange }) => {
 	return (
 		<div className="mb-4">
-			<label htmlFor="employee-name" className="block text-sm font-medium text-gray-700">
-				Imię i nazwisko pracownika:
+			<label htmlFor="employeeName" className="block text-sm font-medium text-gray-700">
+				Imię i nazwisko pracownika
 			</label>
 			<input
-				id="employee-name"
 				type="text"
-				value={employeeName}
+				id="employeeName"
+				value={value}
 				onChange={onChange}
-				className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-				placeholder="Podaj imię i nazwisko"
+				className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+				placeholder="Wprowadź imię i nazwisko"
 			/>
 		</div>
 	);

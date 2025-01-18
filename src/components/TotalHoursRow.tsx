@@ -6,7 +6,7 @@ interface TotalHoursRowProps {
 }
 
 const TotalHoursRow: React.FC<TotalHoursRowProps> = ({ totalHours }) => {
-	// Jeśli totalHours jest NaN, ustawiamy wartość domyślną 0
+	// Jeśli totalHours jest NaN, ustawiam wartość domyślną 0
 	const displayTotalHours = isNaN(totalHours) ? 0 : totalHours;
 
 	return (
