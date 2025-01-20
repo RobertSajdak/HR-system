@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-let workHoursData = [{ id: 1, employee: 'Jan Kowalski', hours: 8, date: '2024-12-01' }];
+let workHoursData = [{ id: 1, employee: 'Jan Kowalski', hours: 8, date: '2025-01-18' }];
 
 export async function GET() {
 	return NextResponse.json(workHoursData);

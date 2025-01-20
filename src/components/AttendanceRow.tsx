@@ -4,24 +4,20 @@ import React from 'react';
 interface AttendanceRowProps {
 	date: string;
 	hours: number;
-	contain: string;
 	onHoursChange: (date: string, value: string) => void;
-	onContainChange: (date: string, value: string) => void;
 	onDeleteRow: (date: string) => void; // Funkcja usuwania przekazana z komponentu nadrzędnego
 }
 
 const AttendanceRow: React.FC<AttendanceRowProps> = ({
 	date,
 	hours,
-	contain,
 	onHoursChange,
-	onContainChange,
 	onDeleteRow,
 }) => {
 	return (
 		<tr>
-			<td className="w-1/5 p-2 text-left">{date}</td>
-			<td className="w-1/5 p-2 items-center">
+			<td className="w-40 p-2 text-left">{date}</td>
+			<td className="w-auto p-2 flex items-center space-x-4">
 				<input
 					type="number"
 					value={hours}
@@ -29,16 +25,6 @@ const AttendanceRow: React.FC<AttendanceRowProps> = ({
 					min="0"
 					max="24"
 					className="w-8 rounded-md p-2 text-left"
-				/>
-			</td>
-			<td className="flex space-x-5">
-				<input
-					type="text"
-					value={contain}
-					onChange={e => onContainChange(date, e.target.value)}
-					min="0"
-					max="20"
-					className="w-auto h-8 rounded-md p-2 text-left"
 				/>
 				<button
 					onClick={() => onDeleteRow(date)} // Wywołanie funkcji usuwania

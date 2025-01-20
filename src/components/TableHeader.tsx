@@ -5,8 +5,7 @@ const TableHeader: React.FC = () => {
 		<thead>
 			<tr>
 				<th className="border border-gray-300 p-3 bg-gray-200 text-left">Data</th>
-				<th className="border border-gray-300 p-3 bg-gray-200 text-left">Liczba godzin w pracy</th>
-				<th className="border border-gray-300 p-3 bg-gray-200 text-left">Uwagi i informacje dodatkowe</th>
+				<th className="border border-gray-300 p-3 bg-gray-200 text-left">Liczba godzin</th>
 			</tr>
 		</thead>
 	);

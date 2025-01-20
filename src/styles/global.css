@@ -24,7 +24,7 @@ body {
   
   /* Stylizacja tabeli */
   table {
-    @apply table-auto w-full border-collapse border-gray-300;
+    @apply table-auto w-full border-collapse border border-gray-300;
   }
   
   th,
@@ -39,11 +39,11 @@ body {
   
   /* Stylowanie formularza */
   input[type="text"] {
-    @apply border border-gray-300 p-2 rounded-md w-full;
+    @apply border-2 border-blue-500 p-2 rounded-md w-full;
   }
   
   input[type="number"] {
-    @apply border border-gray-300 p-1 rounded-md w-full;
+    @apply border border-blue-400 p-1 rounded-md w-full;
   }
   
 @media (max-width: 640px) {
